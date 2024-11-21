@@ -45,17 +45,25 @@ jobs:
     - name: Build Docker Image
       run: docker build -f Dockerfile -t myapp:latest .
 
-    - name: Verify Docker Image
-      run: docker images
-
     - name: Push Docker Image to DockerHub
       run: |
-        echo ${{ secrets.REPO_PWD }} | docker login -u ${{ secrets.REPO_USER }} --password-stdin
-        docker tag myapp:latest ${{ secrets.REPO_USER }}/myapp:latest
-        docker push ${{ secrets.REPO_USER }}/myapp:latest
+       echo ${{ secrets.REPO_PWD }} | docker login -u ${{ secrets.REPO_USER }} --password-stdin
+       docker tag myapp:latest ${{ secrets.REPO_USER }}/myapp:latest
+       docker push ${{ secrets.REPO_USER }}/myapp:latest
+
+    - name: Verify Pushed Docker Image
+      run: docker pull ${{ secrets.REPO_USER }}/myapp:latest
+
+    - name: List Docker Scout Temp Directory
+      run: ls -l /tmp/docker-scout || echo "Directory does not exist"
+
+    - name: Fix Permissions for Temp Directory
+      run: mkdir -p /tmp/docker-scout && chmod -R 777 /tmp/docker-scout
 
     - name: Docker Scout Quickview
       uses: docker/scout-action@v1.0.9
+      env:
+        DOCKER_SCOUT_TMPDIR: /github/workspace/tmp
       with:
         dockerhub-user: ${{ secrets.REPO_USER }}
         dockerhub-password: ${{ secrets.REPO_PWD }}
@@ -63,22 +71,3 @@ jobs:
         command: quickview
         only-severities: critical,high
         sarif-file: scout-quickview.sarif
-
-    - name: Docker Scout CVEs
-      uses: docker/scout-action@v1.0.9
-      with:
-        dockerhub-user: ${{ secrets.REPO_USER }}
-        dockerhub-password: ${{ secrets.REPO_PWD }}
-        image: ${{ secrets.REPO_USER }}/myapp:latest
-        command: cves
-        only-severities: critical,high
-        sarif-file: scout-cves.sarif
-
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: docker-scout-findings
-        path: |
-          scout-quickview.sarif
-          scout-cves.sarif
