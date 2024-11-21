@@ -76,6 +76,6 @@ jobs:
      if: always()
      with:
        name: docker-scout-findings
-      path: |
+       path: |
         scout-quickview.sarif
         scout-cves.sarif
