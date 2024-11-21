@@ -53,6 +53,9 @@ jobs:
         docker scout quickview
         docker scout cves
 
+    - name: Verify Docker Image
+      run: docker images
+
     - name: Docker Scout Quickview
       uses: docker/scout-action@v1.0.9
       with:
